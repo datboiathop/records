@@ -1,0 +1,60 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The user's unique ID" },
+        "displayName": { "type": "string", "description": "The user's display name" },
+        "photoURL": { "type": "string", "description": "The user's profile photo URL" },
+        "email": { "type": "string", "description": "The user's email address" }
+      },
+      "required": ["uid", "displayName", "email"]
+    },
+    "Album": {
+      "title": "Album",
+      "description": "Music album information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The album's unique ID" },
+        "title": { "type": "string", "description": "The album's title" },
+        "artist": { "type": "string", "description": "The album's artist" },
+        "coverUrl": { "type": "string", "description": "The album's cover image URL" },
+        "releaseDate": { "type": "string", "description": "The album's release date" },
+        "tracks": { "type": "array", "items": { "type": "string" }, "description": "The list of track names" }
+      },
+      "required": ["id", "title", "artist", "coverUrl"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "A user's review of an album",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The review's unique ID" },
+        "albumId": { "type": "string", "description": "The album's ID" },
+        "userId": { "type": "string", "description": "The user's ID" },
+        "rating": { "type": "number", "description": "The rating from 1.0 to 10.0" },
+        "comment": { "type": "string", "description": "The user's overall comment" },
+        "trackComments": { "type": "object", "description": "A map of track index to comment" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "The date the review was created" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "The date the review was last updated" }
+      },
+      "required": ["id", "albumId", "userId", "rating", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile documents"
+    },
+    "/albums/{albumId}": {
+      "schema": "Album",
+      "description": "Album documents"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Review documents"
+    }
+  }
+}

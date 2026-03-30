@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id // Clerk User ID
+  email     String   @unique
+  name      String?
+  imageUrl  String?
+  reviews   Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Album {
+  id          String   @id
+  title       String
+  artist      String
+  coverUrl    String
+  releaseDate String?
+  tracks      String   // JSON stringified array of tracks
+  reviews     Review[]
+  createdAt   DateTime @default(now())
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  rating        Float
+  comment       String?
+  trackComments String?  // JSON stringified record of track comments
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  albumId       String
+  album         Album    @relation(fields: [albumId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, albumId])
+}
