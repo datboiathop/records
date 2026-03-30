@@ -83,25 +83,35 @@ export async function getSpotifyAlbumDetails(albumId: string): Promise<SpotifyAl
 }
 
 export async function getNewReleases(): Promise<SpotifyAlbum[]> {
-  const token = await getSpotifyToken();
-  
-  const response = await fetch('https://api.spotify.com/v1/browse/new-releases?limit=10', {
-    headers: {
-      'Authorization': `Bearer ${token}`
-    },
-    next: { revalidate: 3600 * 12 } // Cache for 12 hours
-  });
+  try {
+    const token = await getSpotifyToken();
+    
+    const response = await fetch('https://api.spotify.com/v1/browse/new-releases?limit=10', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      next: { revalidate: 3600 * 12 } // Cache for 12 hours
+    });
 
-  const data = await response.json();
-  
-  if (!data.albums || !data.albums.items) return [];
+    if (!response.ok) {
+      console.error("Spotify API error:", response.status, await response.text());
+      return [];
+    }
 
-  return data.albums.items.map((album: any) => ({
-    id: album.id,
-    title: album.name,
-    artist: album.artists.map((a: any) => a.name).join(', '),
-    coverUrl: album.images[0]?.url || '',
-    releaseDate: album.release_date ? album.release_date.substring(0, 4) : 'Unknown',
-    tracks: []
-  }));
+    const data = await response.json();
+    
+    if (!data.albums || !data.albums.items) return [];
+
+    return data.albums.items.map((album: any) => ({
+      id: album.id,
+      title: album.name,
+      artist: album.artists.map((a: any) => a.name).join(', '),
+      coverUrl: album.images[0]?.url || '',
+      releaseDate: album.release_date ? album.release_date.substring(0, 4) : 'Unknown',
+      tracks: []
+    }));
+  } catch (error) {
+    console.error("Failed to fetch new releases:", error);
+    return [];
+  }
 }

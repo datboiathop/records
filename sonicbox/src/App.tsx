@@ -295,7 +295,7 @@ export default function App() {
         >
           <div className="mb-12">
             <Disc className="w-12 h-12 text-white/20 mx-auto mb-6" />
-            <h1 className="text-6xl font-serif font-light tracking-tighter mb-2 italic">SonicBox</h1>
+            <h1 className="text-6xl font-serif font-light tracking-tighter mb-2 italic">Records</h1>
             <p className="micro-label">The Art of Listening</p>
           </div>
           
@@ -322,7 +322,7 @@ export default function App() {
                 onClick={() => setView('home')}
               >
                 <Disc className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
-                <span className="font-serif italic text-2xl tracking-tighter">SonicBox</span>
+                <span className="font-serif italic text-2xl tracking-tighter">Records</span>
               </div>
               
               <div className="flex items-center justify-around w-full md:w-auto md:gap-12">
