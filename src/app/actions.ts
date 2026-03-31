@@ -2,7 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { currentUser } from '@clerk/nextjs/server';
-import { type SpotifyAlbum } from '@/lib/spotify';
+import { type Album } from '@/lib/apple';
 
 export async function getRecentReviews() {
   return await prisma.review.findMany({
@@ -20,7 +20,7 @@ export async function getUserReviews(userId: string) {
   });
 }
 
-export async function saveReview(albumData: SpotifyAlbum, rating: number, comment: string, trackComments: Record<number, string>) {
+export async function saveReview(albumData: Album, rating: number, comment: string, trackComments: Record<number, string>) {
   const user = await currentUser();
   if (!user) throw new Error("Not authenticated");
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { type SpotifyAlbum } from '@/lib/spotify';
+import { type Album } from '@/lib/apple';
 import { saveReview } from '@/app/actions';
 import { RatingInput } from '@/components/shared/RatingInput';
 
@@ -12,7 +12,7 @@ export const AlbumDetailsView = ({
   onBack, 
   onSuccess 
 }: { 
-  album: SpotifyAlbum; 
+  album: Album; 
   onBack: () => void; 
   onSuccess: () => void;
 }) => {

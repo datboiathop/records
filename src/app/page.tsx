@@ -9,11 +9,13 @@ import {
   LogOut, 
   Loader2,
   Disc,
-  Star
+  Star,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getRecentReviews, getUserReviews } from '@/app/actions';
-import { getSpotifyAlbumDetails, getNewReleases, type SpotifyAlbum } from '@/lib/spotify';
+import { getAppleAlbumDetails, getAppleMostPlayedAlbums100, type Album } from '@/lib/apple';
 import { type Review } from '@/types';
 
 // Components
@@ -26,18 +28,20 @@ import { ProfileView } from '@/components/views/ProfileView';
 export default function App() {
   const { user, isLoaded } = useUser();
   const [view, setView] = useState<'home' | 'search' | 'album' | 'profile'>('home');
-  const [selectedAlbum, setSelectedAlbum] = useState<SpotifyAlbum | null>(null);
+  const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
-  const [newReleases, setNewReleases] = useState<SpotifyAlbum[]>([]);
+  const [newReleases, setNewReleases] = useState<Album[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
+  const pageSize = 10;
+  const [page, setPage] = useState(0);
 
   const fetchHomeData = async () => {
     try {
-      // We can fetch new releases independently of user auth
-      const releases = await getNewReleases();
-      console.log("Fetched new releases from API:", releases?.length);
+      const releases = await getAppleMostPlayedAlbums100();
+      console.log("Fetched home catalog from API:", releases?.length);
       setNewReleases(releases || []);
+      setPage(0);
 
       // Only fetch user-specific data if they are logged in
       const data = await getRecentReviews();
@@ -73,10 +77,45 @@ export default function App() {
   }
 
   if (!user) {
+    // Guest: Top albums from Apple charts; tile rows by repeating.
+    const base = newReleases.filter((a) => a.coverUrl);
+    const bgAlbums =
+      base.length > 0
+        ? Array.from({ length: Math.ceil(100 / base.length) }, () => base).flat().slice(0, 100)
+        : [];
+    const rows = [];
+    for (let i = 0; i < bgAlbums.length; i += 10) {
+      rows.push(bgAlbums.slice(i, i + 10));
+    }
+
     return (
-      <div className="min-h-screen bg-black text-white font-sans selection:bg-white/10 flex flex-col">
+      <div className="min-h-screen bg-black text-white font-sans selection:bg-white/10 flex flex-col relative overflow-hidden">
+        {/* Background Grid */}
+        <div className="absolute inset-0 z-0 pointer-events-none flex flex-col gap-4 p-4 mt-20">
+          {rows.map((row, rowIndex) => (
+            <div 
+              key={rowIndex} 
+              className="grid w-full gap-4 [grid-template-columns:repeat(auto-fit,minmax(3.25rem,1fr))]"
+              style={{ opacity: Math.max(0.15, 0.6 - (rowIndex * 0.09)) }}
+            >
+              {row.map((album, colIndex) => (
+                <div 
+                  key={album.id + rowIndex}
+                  className="aspect-square min-h-0 w-full overflow-hidden rounded-lg"
+                >
+                  <img 
+                    src={album.coverUrl} 
+                    alt="" 
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+
         {/* Navigation */}
-        <nav className="border-b border-white/5 px-8 py-6">
+        <nav className="border-b border-white/5 px-8 py-6 relative z-10 bg-black/80 backdrop-blur-md">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Disc className="w-5 h-5 text-white" />
@@ -98,84 +137,38 @@ export default function App() {
         </nav>
 
         {/* Hero Section */}
-        <main className="flex-1 flex flex-col items-center justify-center px-8 py-24 text-center">
+        <main className="flex-1 flex flex-col items-center justify-center px-8 py-24 text-center relative z-10">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="max-w-3xl mx-auto space-y-8"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-white/60 text-xs font-medium mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/50 border border-white/10 text-white/80 text-xs font-medium mb-4 backdrop-blur-md">
               <Star className="w-3 h-3 text-yellow-500" />
-              <span>Join the community of audiophiles</span>
+              <span>Join your community of audiophiles</span>
             </div>
             
-            <h1 className="text-6xl md:text-8xl font-serif italic tracking-tighter leading-tight">
+            <h1 className="text-6xl md:text-8xl font-serif italic tracking-tighter leading-tight drop-shadow-2xl">
               The Art of<br />Listening.
             </h1>
             
-            <p className="text-xl md:text-2xl font-light text-white/40 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl font-light text-white/80 max-w-2xl mx-auto leading-relaxed drop-shadow-md">
               Track your musical journey. Rate your favorite albums, document your thoughts on every track, and discover what your friends are spinning.
             </p>
 
             <div className="pt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
               <SignUpButton mode="modal">
-                <button className="w-full sm:w-auto bg-white text-black font-medium text-lg px-8 py-4 rounded-full hover:bg-zinc-200 transition-all hover:scale-105 active:scale-95">
+                <button className="w-full sm:w-auto bg-white text-black font-medium text-lg px-8 py-4 rounded-full hover:bg-zinc-200 transition-all hover:scale-105 active:scale-95 shadow-xl">
                   Start Your Collection
                 </button>
               </SignUpButton>
               <SignInButton mode="modal">
-                <button className="w-full sm:w-auto bg-white/5 text-white font-medium text-lg px-8 py-4 rounded-full hover:bg-white/10 border border-white/10 transition-all">
+                <button className="w-full sm:w-auto bg-black/50 backdrop-blur-md text-white font-medium text-lg px-8 py-4 rounded-full hover:bg-white/10 border border-white/10 transition-all shadow-xl">
                   I already have an account
                 </button>
               </SignInButton>
             </div>
-          </motion.div>
-
-          {/* Floating UI Elements (Decorative) */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 1 }}
-            className="mt-32 w-full max-w-5xl mx-auto relative h-64 hidden md:block"
-          >
-            {newReleases && newReleases.length >= 3 ? (
-              <>
-                <div className="absolute left-0 top-0 glass-card p-4 rotate-[-6deg] shadow-2xl w-48">
-                  <div className="aspect-square bg-zinc-800 rounded-lg mb-3 overflow-hidden">
-                    <img src={newReleases[0].coverUrl} alt={newReleases[0].title} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="h-2 w-16 bg-white/20 rounded"></div>
-                    <span className="text-xs font-bold">10.0</span>
-                  </div>
-                </div>
-
-                <div className="absolute right-1/4 -top-12 glass-card p-4 rotate-[4deg] shadow-2xl w-48 z-10">
-                  <div className="aspect-square bg-zinc-800 rounded-lg mb-3 overflow-hidden">
-                    <img src={newReleases[1].coverUrl} alt={newReleases[1].title} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="h-2 w-20 bg-white/20 rounded"></div>
-                    <span className="text-xs font-bold">9.5</span>
-                  </div>
-                </div>
-
-                <div className="absolute right-0 top-8 glass-card p-4 rotate-[12deg] shadow-2xl w-48">
-                  <div className="aspect-square bg-zinc-800 rounded-lg mb-3 overflow-hidden">
-                    <img src={newReleases[2].coverUrl} alt={newReleases[2].title} className="w-full h-full object-cover" />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <div className="h-2 w-12 bg-white/20 rounded"></div>
-                    <span className="text-xs font-bold">8.2</span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <Loader2 className="w-6 h-6 text-white/20 animate-spin" />
-              </div>
-            )}
           </motion.div>
         </main>
       </div>
@@ -220,6 +213,78 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="space-y-12"
             >
+              {/* Top Albums Header*/}
+              <div className="flex flex-col md:flex-row md:items-end justify-between border-b border-white/5 pb-8 mb-2 gap-6">
+                <div>
+                  <h2 className="text-4xl font-serif italic mb-2">Top Albums</h2>
+                  <p className="micro-label">Apple Music charts</p>
+                </div>
+                
+                {newReleases.length > pageSize && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      disabled={page === 0}
+                      className="p-2 rounded-full text-white/50 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white/50 transition-all"
+                      aria-label="Previous page"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <div className="text-xs font-medium text-white/40 tracking-widest uppercase px-2 tabular-nums">
+                      {page + 1} <span className="opacity-50 mx-1">/</span> {Math.ceil(newReleases.length / pageSize)}
+                    </div>
+                    <button
+                      onClick={() => setPage((p) => p + 1)}
+                      disabled={(page + 1) * pageSize >= newReleases.length}
+                      className="p-2 rounded-full text-white/50 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white/50 transition-all"
+                      aria-label="Next page"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Top Albums Images*/}
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  key={page}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="grid gap-6 md:grid-cols-2 lg:grid-cols-5 mb-16"
+                >
+                  {newReleases.slice(page * pageSize, (page + 1) * pageSize).map((album) => (
+                    <div 
+                      key={album.id} 
+                    className="group cursor-pointer"
+                    onClick={async () => {
+                      // Optimistically set the view with the data we already have
+                      setSelectedAlbum(album);
+                      setView('album');
+                      
+                      // Fetch the full details (like the tracklist) in the background
+                      const details = await getAppleAlbumDetails(album.id);
+                      if (details) {
+                        setSelectedAlbum(details);
+                      }
+                    }}
+                  >
+                    <div className="relative aspect-square overflow-hidden rounded-xl mb-4">
+                      <img 
+                        src={album.coverUrl} 
+                        alt={album.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    </div>
+                    <h3 className="font-serif italic text-lg tracking-tight truncate">{album.title}</h3>
+                    <p className="micro-label truncate">{album.artist}</p>
+                  </div>
+                ))}
+                </motion.div>
+              </AnimatePresence>
+
               <header className="border-b border-white/5 pb-8">
                 <h2 className="text-4xl font-serif italic mb-2">Recent Reviews</h2>
                 <p className="micro-label">Community Activity</p>
@@ -245,46 +310,11 @@ export default function App() {
                     )}
                   </div>
 
-                  <header className="border-b border-white/5 pb-8 mb-12">
-                    <h2 className="text-4xl font-serif italic mb-2">New Releases</h2>
-                    <p className="micro-label">Fresh from the studio</p>
-                  </header>
-
-                  <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
-                    {newReleases.map((album) => (
-                      <div 
-                        key={album.id} 
-                        className="group cursor-pointer"
-                        onClick={async () => {
-                          if (!user) {
-                            alert("Please sign in to document a review.");
-                            return;
-                          }
-                          const details = await getSpotifyAlbumDetails(album.id);
-                          if (details) {
-                            setSelectedAlbum(details);
-                            setView('album');
-                          }
-                        }}
-                      >
-                        <div className="relative aspect-square overflow-hidden rounded-xl mb-4">
-                          <img 
-                            src={album.coverUrl} 
-                            alt={album.title} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                          />
-                        </div>
-                        <h3 className="font-serif italic text-lg tracking-tight truncate">{album.title}</h3>
-                        <p className="micro-label truncate">{album.artist}</p>
-                      </div>
-                    ))}
-                  </div>
-
                   <div className="mt-24 p-8 border border-dashed border-white/10 rounded-3xl text-center">
                     <h3 className="text-2xl font-serif italic mb-2">Recently Listening To</h3>
-                    <p className="text-white/40 font-light text-sm mb-6">Connect your Spotify account to automatically fetch your recent spins.</p>
+                    <p className="text-white/40 font-light text-sm mb-6">Connect your account to automatically fetch your recent spins.</p>
                     <button className="bg-white/5 hover:bg-white/10 text-white px-6 py-3 rounded-full text-sm font-medium transition-colors border border-white/10">
-                      Connect Spotify (Coming Soon)
+                      Connect (Coming Soon)
                     </button>
                   </div>
                 </>

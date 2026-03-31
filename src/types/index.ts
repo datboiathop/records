@@ -1,4 +1,4 @@
-import { type SpotifyAlbum } from '@/lib/spotify';
+import { type Album } from '@/lib/apple';
 
 export interface Review {
   id: string;

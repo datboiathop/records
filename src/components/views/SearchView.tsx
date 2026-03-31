@@ -3,18 +3,18 @@
 import { useState } from 'react';
 import { Search, ChevronRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { searchSpotifyAlbums, getSpotifyAlbumDetails, type SpotifyAlbum } from '@/lib/spotify';
+import { searchAppleAlbums, getAppleAlbumDetails, type Album } from '@/lib/apple';
 
-export const SearchView = ({ onSelectAlbum }: { onSelectAlbum: (album: SpotifyAlbum) => void }) => {
+export const SearchView = ({ onSelectAlbum }: { onSelectAlbum: (album: Album) => void }) => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<SpotifyAlbum[]>([]);
+  const [results, setResults] = useState<Album[]>([]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
     setLoading(true);
-    const albums = await searchSpotifyAlbums(query);
+    const albums = await searchAppleAlbums(query);
     setResults(albums);
     setLoading(false);
   };
@@ -70,7 +70,7 @@ export const SearchView = ({ onSelectAlbum }: { onSelectAlbum: (album: SpotifyAl
               <button 
                 onClick={async () => {
                   setLoading(true);
-                  const details = await getSpotifyAlbumDetails(result.id);
+                  const details = await getAppleAlbumDetails(result.id);
                   if (details) onSelectAlbum(details);
                   setLoading(false);
                 }}
